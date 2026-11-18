@@ -21,6 +21,11 @@ components:
     image: kleinia-installer
     tag: main
     packages: [kleinia-installer]
-  # agent userspace joins here once its repos publish :rpm artifact images
-  # (kleinia-agents, kleinia-sched-policy): one manifest entry + one COPY
-  # line in recipe.yml per component
+  llmgw:
+    image: kleinia-llmgw
+    tag: main              # floating; pin for releases (add verify: when upstream CI cosigns)
+    packages: [kleinia-llmgw]
+  schedmgr:
+    image: kleinia-schedmgr
+    tag: main              # floating; pin for releases (add verify: when upstream CI cosigns)
+    packages: [kleinia-schedmgr]

@@ -137,15 +137,27 @@ modules:
       - RUN mkdir -p /boot/efi && cp -ra /usr/lib/efi/*/*/EFI /boot/efi/ && find /usr/lib/efi -name gcdx64.efi -exec cp -an {} /boot/efi/EFI/fedora/ \; && mkdir -p /boot/grub2/fonts && cp /usr/share/grub/unicode.pf2 /boot/grub2/fonts/ && ls /boot/efi/EFI/fedora/shimx64.efi /boot/efi/EFI/fedora/gcdx64.efi /boot/efi/EFI/fedora/mmx64.efi /boot/grub2/fonts/unicode.pf2 /usr/share/grub/unicode.pf2 /usr/lib/grub/i386-pc > /dev/null && echo EFI-CHAIN-OK
       - RUN rm -rf /usr/lib/firmware/nvidia /usr/lib/firmware/amdgpu /usr/lib/firmware/i915 /usr/lib/firmware/mediatek /usr/lib/firmware/qcom 2>/dev/null; KVER=$(ls /usr/lib/modules | head -1) && dracut --force --no-hostonly --add ostree --add dmsquash-live --add-drivers "virtio_blk virtio_pci virtio_scsi virtio_console virtio_gpu virtio_net" /usr/lib/modules/$KVER/initramfs.img "$KVER"
 
-  # ---- 7. installer: RPM from the manifest image (most volatile input —
-  # ---- top of the stack so merges don't invalidate anything below; agent
-  # ---- userspace joins here once its artifact images exist — artifacts.yml) ----
+  # ---- 7. external RPM components from the manifest images (most volatile
+  # ---- inputs — top of the stack so merges don't invalidate anything
+  # ---- below): installer + agent userspace (llmgw, schedmgr) ----
   - type: containerfile
     snippets:
       - COPY --from=localhost/installer:pin /rpms/ /tmp/rpms/installer/
-      - RUN rpm -Uvh /tmp/rpms/*/*.rpm && rm -rf /tmp/rpms && rpm -q kleinia-installer
+      - COPY --from=localhost/llmgw:pin /rpms/ /tmp/rpms/llmgw/
+      - COPY --from=localhost/schedmgr:pin /rpms/ /tmp/rpms/schedmgr/
+      - RUN rpm -Uvh /tmp/rpms/*/*.rpm && rm -rf /tmp/rpms && rpm -q kleinia-installer kleinia-llmgw kleinia-schedmgr
+
+  # ---- 7b. units shipped by the section-7 RPMs (this module must follow
+  # ---- their install: it runs systemctl enable at build time) ----
+  - type: systemd
+    system:
+      enabled:
+        - kleinia-schedmgrd.service
+        # kleinia-llmgw.service/.socket ship but stay unenabled until
+        # upstream G1 (sd_listen_fds): llmgwd self-binds 127.0.0.1:8484, so
+        # any enablement today means systemd + daemon double-bind the port
 
   # ---- 8. final sanity gate ----
   - type: containerfile
     snippets:
-      - RUN test -x /usr/bin/readymade && KVER=$(ls /usr/lib/modules | head -1) && test -f /usr/lib/modules/$KVER/vmlinuz && test -f /usr/lib/modules/$KVER/initramfs.img && test -f /usr/share/plymouth/themes/kleinia/kleinia.plymouth && test -f /usr/share/glib-2.0/schemas/gschemas.compiled && grep -q 'IMAGE_ID=kleinia' /usr/lib/os-release && echo "kleinia layer sanity OK ($KVER)"
+      - RUN test -x /usr/bin/readymade && test -x /usr/bin/llmgwd && test -x /usr/bin/llmgwctl && test -x /usr/bin/schedmgrd && test -x /usr/bin/schedmgr && KVER=$(ls /usr/lib/modules | head -1) && test -f /usr/lib/modules/$KVER/vmlinuz && test -f /usr/lib/modules/$KVER/initramfs.img && test -f /usr/share/plymouth/themes/kleinia/kleinia.plymouth && test -f /usr/share/glib-2.0/schemas/gschemas.compiled && grep -q 'IMAGE_ID=kleinia' /usr/lib/os-release && echo "kleinia layer sanity OK ($KVER)"
