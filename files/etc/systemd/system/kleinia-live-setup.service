@@ -1,0 +1,17 @@
+[Unit]
+ConditionPathExists=/run/initramfs/live
+Description=Kleinia live session setup (liveuser autologin)
+After=systemd-user-sessions.service
+Before=display-manager.service getty@tty1.service
+Requires=systemd-user-sessions.service
+
+[Service]
+Type=oneshot
+StandardOutput=journal+console
+StandardError=journal+console
+ExecStart=/usr/libexec/kleinia/live-setup.sh
+ExecStartPost=/usr/bin/systemctl try-restart serial-getty@ttyS0.service
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

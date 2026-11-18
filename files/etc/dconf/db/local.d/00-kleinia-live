@@ -1,0 +1,21 @@
+# Kleinia live desktop defaults — applied system-wide (no per-user writes,
+# no boot-time gsettings/sudo needed). Compiled into /etc/dconf/db/local by
+# `dconf update` at image build time (see recipe.yml brand layer).
+
+[org/gnome/shell]
+favorite-apps=['org.mozilla.firefox.desktop', 'org.gnome.Nautilus.desktop', 'readymade.desktop']
+enabled-extensions=['dash-to-dock@micxgx.gmail.com']
+disabled-extensions=['background-logo@fedorahosted.org']
+
+[org/gnome/shell/extensions/dash-to-dock]
+dock-fixed=true
+dock-position='BOTTOM'
+intellihide=false
+
+[org/gnome/desktop/session]
+# live session: never blank the screen (demo/install UX + testability)
+idle-delay=uint32 0
+
+[org/gnome/desktop/screensaver]
+lock-enabled=false
+idle-delay=uint32 0

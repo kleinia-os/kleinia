@@ -1,0 +1,47 @@
+[Plymouth Theme]
+Name=Kleinia
+Description=Kleinia boot splash — night black, white mark, quiet spinner
+ModuleName=two-step
+
+[two-step]
+Font=JetBrains Mono 12
+TitleFont=Inter Tight 30
+ImageDir=/usr/share/plymouth/themes/kleinia
+DialogHorizontalAlignment=.5
+DialogVerticalAlignment=.382
+TitleHorizontalAlignment=.5
+TitleVerticalAlignment=.382
+HorizontalAlignment=.5
+VerticalAlignment=.7
+WatermarkHorizontalAlignment=.5
+WatermarkVerticalAlignment=.42
+Transition=none
+TransitionDuration=0.0
+BackgroundStartColor=0x030821
+BackgroundEndColor=0x030821
+ProgressBarBackgroundColor=0x5B6075
+ProgressBarForegroundColor=0x3D63FF
+MessageBelowAnimation=true
+
+[boot-up]
+UseEndAnimation=false
+
+[shutdown]
+UseEndAnimation=false
+
+[reboot]
+UseEndAnimation=false
+
+[updates]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Installing Updates...
+SubTitle=Do not turn off your computer
+
+[system-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Upgrading System...
+SubTitle=Do not turn off your computer

@@ -1,0 +1,20 @@
+# Kleinia: pinned-mirror override of the stock fedora-updates.repo.
+# See fedora.repo (same directory) for the rationale. updates/ rotates
+# constantly, so metadata is refreshed aggressively (30m) to avoid acting on
+# superseded package lists cached across builds.
+
+[updates]
+name=Fedora $releasever - $basearch - Updates
+# metalink=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f$releasever&arch=$basearch
+baseurl=https://mirrors.ustc.edu.cn/fedora/updates/$releasever/Everything/$basearch/
+        https://mirrors.aliyun.com/fedora/updates/$releasever/Everything/$basearch/
+        https://mirrors.tuna.tsinghua.edu.cn/fedora/updates/$releasever/Everything/$basearch/
+        https://mirrors.cernet.edu.cn/fedora/updates/$releasever/Everything/$basearch/
+enabled=1
+countme=1
+metadata_expire=30m
+repo_gpgcheck=0
+type=rpm
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-$releasever-$basearch
+skip_if_unavailable=False

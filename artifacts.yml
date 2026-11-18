@@ -1,0 +1,26 @@
+# Kleinia artifacts manifest — the single list of external images this
+# build consumes. An upgrade is a one-line change here; recipe.yml always
+# references the fixed local alias localhost/<name>:pin (retagged by
+# scripts/ci-build.sh "artifacts"). Floating tags resolve to digests at
+# pull time; pin tag (+digest) for releases.
+api: 1
+
+# Pull source for every image below (anonymous pull). Override with the
+# KLN_ARTIFACT_REGISTRY environment variable.
+registry: ghcr.io/kleinia-os
+
+# Image layout contract:
+#   kernel         bootc layout: /usr/lib/modules/<kver>/ (vmlinuz, modules)
+#   everything else  FROM scratch carrying /rpms/*.rpm, installed by recipe
+components:
+  kernel:
+    image: kleinia-kernel
+    tag: 7.2.11-kleinia.16   # signed seq tag; the floating tag has no signature
+    verify: keys/kleinia-cosign.pub
+  installer:
+    image: kleinia-installer
+    tag: main
+    packages: [kleinia-installer]
+  # agent userspace joins here once its repos publish :rpm artifact images
+  # (kleinia-agents, kleinia-sched-policy): one manifest entry + one COPY
+  # line in recipe.yml per component

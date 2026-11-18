@@ -1,0 +1,12 @@
+[Unit]
+Description=ACB-OS boot proof: agents are kernel objects right after boot
+After=agentd.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'sleep 3; echo "[acb-welcome] kernel: $(uname -r)"; echo "[acb-welcome] agents at boot:"; /usr/bin/agentctl ps; /usr/bin/agentctl call agent://sys.agentd/skills/ping; echo "[acb-welcome] io-schedulers: $(cat /sys/block/vda/queue/scheduler 2>/dev/null)"; test -d /sys/kernel/sched_ext && echo "[acb-welcome] sched_ext: present"; dmesg | grep -m1 "^.*cache_ext:" >/dev/null && echo "[acb-welcome] cache_ext: active (see dmesg)"'
+StandardOutput=journal+console
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

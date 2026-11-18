@@ -1,0 +1,114 @@
+name: build
+# One workflow step = one ci-build.sh subcommand. Step names stay plain;
+# detailed logs live in each step's own log file on the runner
+# (/var/tmp/kleinia-ci/logs/<step>-<run>.log). External components come
+# from artifacts.yml; nothing is compiled from source checkouts here.
+on:
+  workflow_dispatch:
+    inputs:
+      build_iso:
+        description: Also build, smoke-test and publish the ISO
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths: ['files/**', 'recipe.yml', 'artifacts.yml', 'scripts/**', 'keys/**']
+
+permissions:
+  packages: write   # push :dev to ghcr.io with the workflow token
+
+env:
+  KLN_WORK: /srv/kleinia-ci
+  KLN_CACHE: /srv/kleinia-cache
+  # pull source (public artifacts) and push target are separate: a fork
+  # pulls KleiniaOS public artifacts but pushes to its own namespace
+  KLN_ARTIFACT_REGISTRY: ${{ vars.KLN_ARTIFACT_REGISTRY || 'ghcr.io/kleinia-os' }}
+  KLN_REGISTRY: ${{ vars.KLN_REGISTRY || format('ghcr.io/{0}', github.repository_owner) }}
+  ISO_LOCAL_DIR: ${{ vars.ISO_LOCAL_DIR || '' }}
+  ISO_PAYLOAD_REF: ${{ vars.ISO_PAYLOAD_REF || 'ghcr.io/kleinia-os/kleinia:testing' }}
+  http_proxy: ${{ vars.KLN_HTTP_PROXY || '' }}
+  https_proxy: ${{ vars.KLN_HTTPS_PROXY || '' }}
+  no_proxy: ${{ vars.KLN_NO_PROXY || 'localhost,127.0.0.1' }}
+
+concurrency:
+  group: image-build
+  cancel-in-progress: false
+
+jobs:
+  image:
+    runs-on: [self-hosted, kln-build]
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Prepare
+        run: bash scripts/ci-build.sh prepare
+
+      - name: Pull artifacts
+        run: bash scripts/ci-build.sh artifacts
+
+      - name: Build image
+        run: bash scripts/ci-build.sh build
+
+      - name: Push image
+        env:
+          KLN_REGISTRY_USER: ${{ secrets.KLN_REGISTRY_USER }}
+          KLN_REGISTRY_PASSWORD: ${{ secrets.KLN_REGISTRY_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/ci-build.sh push
+
+      - name: Sign image
+        env:
+          KLN_COSIGN_KEY: ${{ secrets.KLN_COSIGN_KEY }}
+          KLN_COSIGN_PASSWORD: ${{ secrets.KLN_COSIGN_PASSWORD }}
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          KLN_REGISTRY_USER: ${{ secrets.KLN_REGISTRY_USER }}
+          KLN_REGISTRY_PASSWORD: ${{ secrets.KLN_REGISTRY_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          export TOOLS="$KLN_CACHE/tools"
+          bash scripts/ci-build.sh sign
+
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo "### image job (run $GITHUB_RUN_ID, commit $GITHUB_SHA)"
+            for s in prepare artifacts build push sign; do
+              cat "/var/tmp/kleinia-ci/step-$s.txt" 2>/dev/null
+            done | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY" || true
+
+  iso:
+    needs: image
+    if: ${{ inputs.build_iso == true }}
+    runs-on: [self-hosted, kln-iso]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build ISO
+        run: bash scripts/ci-build.sh iso-build
+
+      - name: Sign checksums
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+        run: |
+          export TOOLS="$KLN_CACHE/tools"
+          bash scripts/ci-build.sh iso-sign
+
+      - name: Boot smoke
+        run: ISO_DIR="$KLN_WORK/out" bash scripts/ci-smoke.sh
+
+      - name: Archive ISO
+        run: bash scripts/ci-build.sh iso-archive
+
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo "### iso job (run $GITHUB_RUN_ID)"
+            for s in iso-build iso-sign iso-archive; do
+              cat "/var/tmp/kleinia-ci/step-$s.txt" 2>/dev/null
+            done | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY" || true

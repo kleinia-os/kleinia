@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE wallpapers SYSTEM "gnome-wp-list.dtd">
+<!-- install to /usr/share/gnome-background-properties/; images to /usr/share/backgrounds/kleinia/ -->
+<wallpapers>
+  <wallpaper deleted="false">
+    <name>Kleinia Ripple</name>
+    <filename>/usr/share/backgrounds/kleinia/kleinia-ripple-light-3840x2160.png</filename>
+    <filename-dark>/usr/share/backgrounds/kleinia/kleinia-ripple-3840x2160.png</filename-dark>
+    <options>zoom</options>
+    <shade_type>solid</shade_type>
+    <pcolor>#002FA7</pcolor>
+    <scolor>#030821</scolor>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Kleinia Night</name>
+    <filename>/usr/share/backgrounds/kleinia/kleinia-night-3840x2160.png</filename>
+    <options>zoom</options>
+    <shade_type>solid</shade_type>
+    <pcolor>#002FA7</pcolor>
+    <scolor>#030821</scolor>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Kleinia Dawn</name>
+    <filename>/usr/share/backgrounds/kleinia/kleinia-dawn-3840x2160.png</filename>
+    <options>zoom</options>
+    <shade_type>solid</shade_type>
+    <pcolor>#002FA7</pcolor>
+    <scolor>#030821</scolor>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Kleinia Horizon</name>
+    <filename>/usr/share/backgrounds/kleinia/kleinia-horizon-3840x2160.png</filename>
+    <options>zoom</options>
+    <shade_type>solid</shade_type>
+    <pcolor>#002FA7</pcolor>
+    <scolor>#030821</scolor>
+  </wallpaper>
+  <wallpaper deleted="false">
+    <name>Kleinia Pattern</name>
+    <filename>/usr/share/backgrounds/kleinia/kleinia-pattern-3840x2160.png</filename>
+    <options>zoom</options>
+    <shade_type>solid</shade_type>
+    <pcolor>#002FA7</pcolor>
+    <scolor>#030821</scolor>
+  </wallpaper>
+</wallpapers>

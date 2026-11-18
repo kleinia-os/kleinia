@@ -1,0 +1,72 @@
+name: promote
+# Promote a local-archived testing ISO to a public release on R2
+# (dl.kleinia.io): verify the archive, re-sign under the release name,
+# upload immutable, verify over HTTPS, then flip releases.json (the switch
+# point, written last). Bucket lock is applied manually by an admin.
+#
+# The release environment holds the R2 credentials — a required reviewer
+# must approve every run. CI never touches R2.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Source CI run id (in the local ISO archive)
+        required: true
+      version:
+        description: Release version (e.g. 0.1)
+        required: true
+      codename:
+        description: Codename (e.g. Aloe)
+        required: true
+      slug:
+        description: Slug (defaults to the lowercased codename)
+        required: false
+        default: ''
+      channel:
+        description: Channel recorded in releases.json
+        required: false
+        default: preview
+      base:
+        description: Base recorded in releases.json
+        required: false
+        default: 'Fedora 44'
+      image:
+        description: Container image ref recorded in releases.json (empty to omit)
+        required: false
+        default: ''
+
+jobs:
+  promote:
+    runs-on: [self-hosted, kln-iso]
+    environment: release
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Promote ISO
+        env:
+          PROMOTE_RUN: ${{ inputs.run_id }}
+          PROMOTE_VERSION: ${{ inputs.version }}
+          PROMOTE_CODENAME: ${{ inputs.codename }}
+          PROMOTE_SLUG: ${{ inputs.slug }}
+          PROMOTE_CHANNEL: ${{ inputs.channel }}
+          PROMOTE_BASE: ${{ inputs.base }}
+          PROMOTE_IMAGE: ${{ inputs.image }}
+          ISO_LOCAL_DIR: ${{ vars.ISO_LOCAL_DIR }}
+          R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+          R2_PUBLIC_BASE_URL: ${{ vars.R2_PUBLIC_BASE_URL }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+        run: |
+          export TOOLS="${KLN_CACHE:-/srv/kleinia-cache}/tools"
+          bash scripts/ci-build.sh iso-promote
+
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo "### promote (run $GITHUB_RUN_ID)"
+            cat /var/tmp/kleinia-ci/step-iso-promote.txt 2>/dev/null
+          } | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY" || true

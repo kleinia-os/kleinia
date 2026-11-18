@@ -1,0 +1,34 @@
+[org.gnome.desktop.background]
+picture-uri='file:///usr/share/backgrounds/kleinia/kleinia-ripple-light-3840x2160.png'
+picture-uri-dark='file:///usr/share/backgrounds/kleinia/kleinia-ripple-3840x2160.png'
+
+[org.gnome.desktop.screensaver]
+picture-uri='file:///usr/share/backgrounds/kleinia/kleinia-ripple-3840x2160.png'
+
+[org.gnome.desktop.interface]
+accent-color='blue'
+font-name='Inter Tight 11'
+document-font-name='Inter Tight 11'
+monospace-font-name='JetBrains Mono 10'
+color-scheme='prefer-dark'
+
+[org.gnome.desktop.wm.preferences]
+titlebar-font='Inter Tight Bold 11'
+
+[org.gnome.shell]
+disabled-extensions=['background-logo@fedorahosted.org']
+enabled-extensions=['dash-to-dock@micxgx.gmail.com', 'ding@rastersoft.com']
+
+[org.gnome.shell.extensions.dash-to-dock]
+dock-fixed=true
+dock-position='BOTTOM'
+intellihide=false
+dash-max-icon-size=48
+extend-height=false
+height-fraction=0.9
+
+[org.gnome.shell.extensions.ding]
+show-home=false
+show-volumes=false
+show-network-volumes=false
+start-corner='top-left'

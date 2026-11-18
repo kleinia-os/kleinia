@@ -1,0 +1,6 @@
+# actionlint: self-hosted runner labels used by this repo's workflows
+# (build.yml: kln-build for image jobs, kln-iso for the ISO smoke job)
+self-hosted-runner:
+  labels:
+    - kln-build
+    - kln-iso

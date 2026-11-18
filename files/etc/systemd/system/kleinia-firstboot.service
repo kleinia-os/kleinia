@@ -1,0 +1,17 @@
+[Unit]
+ConditionPathExists=/run/initramfs/live
+Description=Kleinia first-boot fixups (SELinux labels, default hostname)
+ConditionPathExists=!/var/lib/kleinia/firstboot-done
+After=local-fs.target systemd-sysusers.service
+# NEVER order against dbus.socket/dbus-broker here: it forms a cycle with
+# basic.target (firstboot is pulled in by multi-user) and systemd then drops
+# random jobs to break the loop (observed 2026-10-24).
+Before=display-manager.service accounts-daemon.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/kleinia/firstboot.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

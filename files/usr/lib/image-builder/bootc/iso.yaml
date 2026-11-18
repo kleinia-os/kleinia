@@ -1,0 +1,9 @@
+label: "Kleinia-0.1-Aloe"
+grub2:
+  entries:
+    - name: "Start Kleinia 0.1 (Aloe)"
+      linux: "/images/pxeboot/vmlinuz root=live:CDLABEL=Kleinia-0.1-Aloe rd.live.image console=tty0 enforcing=0"
+      initrd: "/images/pxeboot/initrd.img"
+    - name: "Test media and start Kleinia"
+      linux: "/images/pxeboot/vmlinuz root=live:CDLABEL=Kleinia-0.1-Aloe rd.live.image rd.live.check console=tty0 enforcing=0"
+      initrd: "/images/pxeboot/initrd.img"

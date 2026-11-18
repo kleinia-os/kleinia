@@ -1,0 +1,15 @@
+NAME="Kleinia"
+PRETTY_NAME="Kleinia 0.1 (Aloe)"
+ID=fedora
+ID_LIKE=fedora
+IMAGE_ID=kleinia
+IMAGE_VERSION=44.20261024.0
+VERSION_ID=44
+VERSION="0.1 (Aloe)"
+VERSION_CODENAME=aloe
+LOGO=kleinia
+ANSI_COLOR="38;2;61;99;255"
+HOME_URL="https://github.com/kleinia"
+DOCUMENTATION_URL="https://github.com/kleinia"
+BUG_REPORT_URL="https://github.com/kleinia/issues"
+SUPPORT_URL="https://github.com/kleinia"

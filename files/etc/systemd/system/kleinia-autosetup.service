@@ -1,0 +1,15 @@
+[Unit]
+ConditionPathExists=/run/initramfs/live
+Description=Kleinia CI auto-install (only when kleinia.autosetup karg present)
+ConditionKernelCommandLine=kleinia.autosetup
+After=kleinia-live-setup.service multi-user.target
+
+[Service]
+Type=oneshot
+StandardOutput=journal+console
+StandardError=journal+console
+ExecStart=/usr/libexec/kleinia/live-install.sh --auto /dev/vda
+ExecStartPost=/usr/bin/systemctl poweroff
+
+[Install]
+WantedBy=multi-user.target

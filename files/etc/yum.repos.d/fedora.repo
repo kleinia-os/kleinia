@@ -1,0 +1,28 @@
+# Kleinia: pinned-mirror override of the stock fedora.repo.
+# Rationale: the default metalink geo-roulette hands metadata and packages
+# from different mirrors; when a package is superseded mid-sync (old file
+# removed, metadata not yet rotated — or the reverse) builds die with 404s
+# that no retry can fix. Pinning USTC/Aliyun/TUNA (measured fastest and most
+# reliable from the build runner) keeps metadata and packages on the same
+# mirror set with ordered failover; mirrors.cernet.edu.cn is appended as a
+# last-resort candidate — it is a source-IP-sticky 302 redirector to a
+# health-picked member (currently USTC's ISP entry), i.e. one more
+# auto-selected chance when the three pinned hosts all fail. Upstream
+# original kept as comments for reference. To revert, delete this file and
+# restore the metalink lines.
+
+[fedora]
+name=Fedora $releasever - $basearch
+# metalink=https://mirrors.fedoraproject.org/metalink?repo=fedora-$releasever&arch=$basearch
+baseurl=https://mirrors.ustc.edu.cn/fedora/releases/$releasever/Everything/$basearch/os/
+        https://mirrors.aliyun.com/fedora/releases/$releasever/Everything/$basearch/os/
+        https://mirrors.tuna.tsinghua.edu.cn/fedora/releases/$releasever/Everything/$basearch/os/
+        https://mirrors.cernet.edu.cn/fedora/releases/$releasever/Everything/$basearch/os/
+enabled=1
+countme=1
+metadata_expire=7d
+repo_gpgcheck=0
+type=rpm
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-$releasever-$basearch
+skip_if_unavailable=False

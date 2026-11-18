@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Install Kleinia
+Exec=readymade
+Icon=kleinia-app-icon
+Terminal=false
+X-GNOME-Autostart-enabled=true

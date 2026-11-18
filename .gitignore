@@ -1,0 +1,20 @@
+*.iso
+*.raw
+*.qcow2
+*.tar
+*.tar.zst
+rootfs*
+bootc-libs/
+stage/
+__pycache__/
+# build products must never be tracked (5.4.3.2) — they are compiled in-stage
+# or shipped as OCI artifacts
+*.o
+*.a
+*.so
+*.so.*
+*.dll
+*.pyc
+gschemas.compiled
+# staged from the kleinia-agents repo by scripts/ci-build.sh (M1 supply-side)
+files/build-context/agent-src/

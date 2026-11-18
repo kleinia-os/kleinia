@@ -1,0 +1,6 @@
+[org/gnome/login-screen]
+logo='/usr/share/icons/hicolor/scalable/apps/kleinia-app-icon.svg'
+
+[org/gnome/desktop/background]
+picture-uri='file:///usr/share/backgrounds/kleinia/kleinia-ripple-3840x2160.png'
+picture-uri-dark='file:///usr/share/backgrounds/kleinia/kleinia-ripple-3840x2160.png'

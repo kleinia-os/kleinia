@@ -1,0 +1,151 @@
+# Kleinia — Agentic Linux distribution image (BlueBuild recipe v1).
+# Base: Universal Blue silverblue-main (GNOME atomic). The kernel and all
+# agent-userspace components come as prebuilt images listed in artifacts.yml
+# and are staged as localhost/<name>:pin by scripts/ci-build.sh.
+name: kleinia
+description: Kleinia — Agentic Linux with custom ACB kernel, GNOME desktop and agent userspace
+
+base-image: ghcr.io/ublue-os/silverblue-main
+image-version: "44"
+
+alt-tags:
+  - latest
+  - testing
+
+stages:
+  # pinned upstream single-binary dev tools, checksummed, into /usr/local
+  # (herdr: agent-aware terminal multiplexer; uv: python; pnpm: node) —
+  # a stage because module-run filesystem changes don't reach the image
+  - name: devtools
+    from: ghcr.io/ublue-os/silverblue-main:44
+    modules:
+      - type: containerfile
+        snippets:
+          # /usr/local is an ostree symlink into /var (never survives a
+          # bootc deploy) — binaries go to /usr/bin, pnpm's tree to /usr/lib
+          - RUN curl -fsSL -o /usr/bin/herdr https://github.com/herdrdev/herdr/releases/download/v0.9.5/herdr-linux-x86_64 && echo "14d9e8bc8b4a9e0118d77c32266f76d461f09b40342eb23752960bd89f59929d  /usr/bin/herdr" | sha256sum -c - && chmod 0755 /usr/bin/herdr
+          - RUN curl -fsSL -o /tmp/uv.tar.gz https://github.com/astral-sh/uv/releases/download/0.13.9/uv-x86_64-unknown-linux-musl.tar.gz && echo "58ccf5f1792b8a5a88d01bc910ea131a8b3db4a319a17ad5fad75e0845a3e271  /tmp/uv.tar.gz" | sha256sum -c - && tar -xzf /tmp/uv.tar.gz -C /usr/bin --strip-components=1 uv-x86_64-unknown-linux-musl/uv uv-x86_64-unknown-linux-musl/uvx
+          - RUN curl -fsSL -o /tmp/pnpm.tar.gz https://github.com/pnpm/pnpm/releases/download/v12.21.0/pnpm-linux-x64.tar.gz && echo "84c4773bcf4a217f4083cd7b2a91e4cee6103cf42426c1282ef37d308f55a410  /tmp/pnpm.tar.gz" | sha256sum -c - && mkdir -p /usr/lib/pnpm && tar -xzf /tmp/pnpm.tar.gz -C /usr/lib/pnpm && ln -s ../lib/pnpm/pnpm /usr/bin/pnpm
+
+  # flatpak preinstall runs in its own stage: raw Dockerfile RUN steps build
+  # real image layers (module-run filesystem changes were silently dropped
+  # from the final image by the module machinery — nothing landed)
+  - name: flatpaks
+    from: ghcr.io/ublue-os/silverblue-main:44
+    modules:
+      - type: containerfile
+        snippets:
+          - RUN mkdir -p /etc/flatpak/installations.d /usr/lib/flatpak && printf '[Installation "kleinia"]\nPath=/usr/lib/flatpak\n' > /etc/flatpak/installations.d/kleinia.conf
+          - RUN flatpak remote-add --installation=kleinia --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          - RUN flatpak install -y --installation=kleinia --noninteractive flathub org.mozilla.firefox org.onlyoffice.desktopeditors org.gnome.Loupe io.github.celluloid_player.Celluloid org.gnome.gitlab.somas.Apostrophe com.mattjakeman.ExtensionManager io.github.flattool.Warehouse com.github.tchx84.Flatseal
+
+modules:
+  # Layer order = change frequency, ascending: volatile inputs (installer,
+  # kernel) sit on top so their bumps never invalidate the heavy stable
+  # layers below (flatpaks ~3GB, CLI toolset) in CI cache or client pulls.
+
+  # ---- 1. brand layer (must precede dracut so the plymouth theme ships in initramfs) ----
+  - type: files
+    files:
+      - source: usr
+        destination: /usr
+      - source: etc
+        destination: /etc
+  - type: containerfile
+    snippets:
+      - RUN cp -rn /usr/share/plymouth/themes/spinner/. /usr/share/plymouth/themes/kleinia/ && rm -f /usr/share/plymouth/themes/kleinia/spinner.plymouth
+      - RUN fc-cache -f >/dev/null 2>&1 && glib-compile-schemas /usr/share/glib-2.0/schemas/
+      - RUN dconf update
+      # ReadyMade installer image catalog
+      - RUN mkdir -p /etc/bootc-installer && echo '{"images":[{"id":"kleinia","name":"Kleinia 0.1 (Aloe)","variants":[{"id":"kleinia","image":"ghcr.io/kleinia-os/kleinia:testing"}]}]}' > /etc/bootc-installer/images.json
+      # upstream base (floating tag) started shipping gnome-tour, which
+      # hijacks the live session with a Fedora-branded welcome window
+      - RUN rpm -e --nodeps gnome-tour 2>/dev/null || true
+
+  # ---- 2. applications & CLI toolset (browser/office/viewer ship as Flatpaks) ----
+  - type: rpm-ostree
+    install:
+      - distrobox
+      - htop
+      - btop
+      - git
+      - vim
+      - wget
+      - fastfetch
+      - curl
+      - bind-utils
+      - openssh-clients
+      - rsync
+      - tmux
+      - ripgrep
+      - parted
+      - gparted
+      - jq
+      - poppler-utils
+      - fd-find
+      - gum
+      - grub2-efi-x64-cdboot
+      - dracut-live
+      - xorriso
+      - squashfs-tools
+      - isomd5sum
+      - grub2-pc-modules
+      - gnome-shell-extension-dash-to-dock
+      # installer runtime tooling (was a `dnf ... || true` in the brand
+      # layer — hard deps now fail the build instead of being swallowed)
+      - systemd-repart
+      - grub2-tools
+      - cryptsetup
+    remove:
+      - firefox
+      - firefox-langpacks
+
+  # ---- 3. systemd units (agentd/acb-welcome rejoin with agent userspace) ----
+  - type: systemd
+    system:
+      enabled:
+        - kleinia-firstboot.service
+        - kleinia-live-password.service
+        - kleinia-live-setup.service
+        - kleinia-autosetup.service
+
+  # ---- 4. preinstalled Flatpaks + devtools (built in their own stages; 8
+  # ---- apps on 2 runtimes, read-only /usr/lib/flatpak — live, offline and
+  # ---- installed systems all get them; user installs keep /var/lib/flatpak.
+  # ---- Heavy, rarely-changing: kept low so volatile layers above never
+  # ---- invalidate its cache) ----
+  - type: containerfile
+    snippets:
+      - COPY --from=flatpaks /etc/flatpak/installations.d/kleinia.conf /etc/flatpak/installations.d/kleinia.conf
+      - COPY --from=flatpaks /usr/lib/flatpak /usr/lib/flatpak
+      - COPY --from=devtools /usr/bin/herdr /usr/bin/uv /usr/bin/uvx /usr/bin/pnpm /usr/bin/
+      - COPY --from=devtools /usr/lib/pnpm /usr/lib/pnpm
+
+  # ---- 5. swap the kernel: erase distro kernel, install ours, depmod ----
+  - type: containerfile
+    snippets:
+      - RUN rm -f /etc/yum.repos.d/fedora-cisco-openh264.repo
+      - RUN dnf -y remove 'kernel*' 'akmod*' 'ublue-os-akmods*' || true
+      - RUN rm -rf /usr/lib/modules/* /boot/* && dnf -y clean all
+      - COPY --from=localhost/kernel:pin /usr/lib/modules/ /usr/lib/modules/
+      - RUN KVER=$(ls /usr/lib/modules | head -1) && depmod -a "$KVER" && test "$(ls /usr/lib/modules | wc -l)" = 1
+      - RUN mkdir -p /agent /etc/agent/services.d /var/lib/acb /usr/lib/bootc/kargs.d && printf 'kargs = ["console=tty0", "console=ttyS0,115200n8"]\n' > /usr/lib/bootc/kargs.d/50-serial-console.toml
+
+  # ---- 6. EFI chain bridge + initramfs (needs the kernel + plymouth theme) ----
+  - type: containerfile
+    snippets:
+      - RUN mkdir -p /boot/efi && cp -ra /usr/lib/efi/*/*/EFI /boot/efi/ && find /usr/lib/efi -name gcdx64.efi -exec cp -an {} /boot/efi/EFI/fedora/ \; && mkdir -p /boot/grub2/fonts && cp /usr/share/grub/unicode.pf2 /boot/grub2/fonts/ && ls /boot/efi/EFI/fedora/shimx64.efi /boot/efi/EFI/fedora/gcdx64.efi /boot/efi/EFI/fedora/mmx64.efi /boot/grub2/fonts/unicode.pf2 /usr/share/grub/unicode.pf2 /usr/lib/grub/i386-pc > /dev/null && echo EFI-CHAIN-OK
+      - RUN rm -rf /usr/lib/firmware/nvidia /usr/lib/firmware/amdgpu /usr/lib/firmware/i915 /usr/lib/firmware/mediatek /usr/lib/firmware/qcom 2>/dev/null; KVER=$(ls /usr/lib/modules | head -1) && dracut --force --no-hostonly --add ostree --add dmsquash-live --add-drivers "virtio_blk virtio_pci virtio_scsi virtio_console virtio_gpu virtio_net" /usr/lib/modules/$KVER/initramfs.img "$KVER"
+
+  # ---- 7. installer: RPM from the manifest image (most volatile input —
+  # ---- top of the stack so merges don't invalidate anything below; agent
+  # ---- userspace joins here once its artifact images exist — artifacts.yml) ----
+  - type: containerfile
+    snippets:
+      - COPY --from=localhost/installer:pin /rpms/ /tmp/rpms/installer/
+      - RUN rpm -Uvh /tmp/rpms/*/*.rpm && rm -rf /tmp/rpms && rpm -q kleinia-installer
+
+  # ---- 8. final sanity gate ----
+  - type: containerfile
+    snippets:
+      - RUN test -x /usr/bin/readymade && KVER=$(ls /usr/lib/modules | head -1) && test -f /usr/lib/modules/$KVER/vmlinuz && test -f /usr/lib/modules/$KVER/initramfs.img && test -f /usr/share/plymouth/themes/kleinia/kleinia.plymouth && test -f /usr/share/glib-2.0/schemas/gschemas.compiled && grep -q 'IMAGE_ID=kleinia' /usr/lib/os-release && echo "kleinia layer sanity OK ($KVER)"

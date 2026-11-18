@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Install Kleinia
+Comment=Install Kleinia 0.1 (Aloe) to your disk
+Exec=readymade
+Icon=kleinia-app-icon
+Terminal=false
+Categories=System;
+StartupNotify=true
+StartupWMClass=com.fyralabs.Readymade
+# hidden system copy: the live environment surfaces a visible copy from
+# /var/lib/kleinia/applications (see live-setup.sh); the installed system
+# shows no installer entry
+NoDisplay=true
