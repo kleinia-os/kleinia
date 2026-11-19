@@ -133,7 +133,10 @@ modules:
       - RUN rm -rf /usr/lib/modules/* /boot/* && dnf -y clean all
       - COPY --from=localhost/kernel:pin /usr/lib/modules/ /usr/lib/modules/
       - RUN KVER=$(ls /usr/lib/modules | head -1) && depmod -a "$KVER" && test "$(ls /usr/lib/modules | wc -l)" = 1
-      - RUN mkdir -p /agent /etc/agent/services.d /var/lib/acb /usr/lib/bootc/kargs.d && printf 'kargs = ["console=tty0", "console=ttyS0,115200n8"]\n' > /usr/lib/bootc/kargs.d/50-serial-console.toml
+      # plymouth.ignore-serial-consoles keeps the graphical splash painting even
+      # though ttyS0 stays on the cmdline for serial debugging: without it plymouth
+      # detects the serial console and forces its text-mode details view
+      - RUN mkdir -p /agent /etc/agent/services.d /var/lib/acb /usr/lib/bootc/kargs.d && printf 'kargs = ["console=tty0", "console=ttyS0,115200n8", "quiet", "rhgb", "plymouth.ignore-serial-consoles"]\n' > /usr/lib/bootc/kargs.d/50-serial-console.toml
 
   # ---- 6. EFI chain bridge + initramfs (needs the kernel + plymouth theme) ----
   - type: containerfile
