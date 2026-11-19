@@ -1,5 +1,8 @@
 [org/gnome/login-screen]
-logo='/usr/share/icons/hicolor/scalable/apps/kleinia-app-icon.svg'
+# GDM renders the logo at natural size, unscaled: the app icon SVG declares
+# 512x512 and buried the whole login prompt. Use the 74x128 brand mark that
+# brand-sync.sh lays down for exactly this chain instead.
+logo='/usr/share/pixmaps/system-logo-white.png'
 
 [org/gnome/desktop/background]
 picture-uri='file:///usr/share/backgrounds/kleinia/kleinia-ripple-3840x2160.png'

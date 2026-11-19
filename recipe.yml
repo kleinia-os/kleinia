@@ -91,6 +91,10 @@ modules:
       - isomd5sum
       - grub2-pc-modules
       - gnome-shell-extension-dash-to-dock
+      # llmgw GUI RPM (kleinia-llmgw) declares gtk4/libadwaita/python3-gobject
+      # as rpm depends; gtk4/libadwaita are in the GNOME base, pin the third
+      # explicitly so the section-7 rpm -Uvh never trips on it
+      - python3-gobject
       # installer runtime tooling (was a `dnf ... || true` in the brand
       # layer — hard deps now fail the build instead of being swallowed)
       - systemd-repart

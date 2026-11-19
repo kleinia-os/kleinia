@@ -4,7 +4,10 @@
 
 [org/gnome/shell]
 favorite-apps=['org.mozilla.firefox.desktop', 'org.gnome.Nautilus.desktop', 'readymade.desktop']
-enabled-extensions=['dash-to-dock@micxgx.gmail.com']
+# dconf values (not defaults) replace the gschema override entirely — the
+# live db must re-list dash-to-dock and add schedmgr (its RPM is in the image
+# and kleinia-schedmgrd runs in live too)
+enabled-extensions=['dash-to-dock@micxgx.gmail.com', 'schedmgr@kleinia.io']
 disabled-extensions=['background-logo@fedorahosted.org']
 
 [org/gnome/shell/extensions/dash-to-dock]

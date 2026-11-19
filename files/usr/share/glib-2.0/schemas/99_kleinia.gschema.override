@@ -17,7 +17,9 @@ titlebar-font='Inter Tight Bold 11'
 
 [org.gnome.shell]
 disabled-extensions=['background-logo@fedorahosted.org']
-enabled-extensions=['dash-to-dock@micxgx.gmail.com', 'ding@rastersoft.com']
+# schedmgr ships its extension system-wide (kleinia-schedmgr RPM); GNOME never
+# auto-enables system extensions, so default it on here for every new user
+enabled-extensions=['dash-to-dock@micxgx.gmail.com', 'ding@rastersoft.com', 'schedmgr@kleinia.io']
 
 [org.gnome.shell.extensions.dash-to-dock]
 dock-fixed=true
